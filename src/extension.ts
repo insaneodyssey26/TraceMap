@@ -17,6 +17,9 @@ import { DeadCodeAnalyzer } from './analyzeDeadCode';
 import { ProjectFileCollector } from './getProjectFiles';
 import { CodeVisualizerProvider } from './codeVisualizer';
 import { VisualizerActionsProvider } from './visualizerActionsProvider';
+import { SecurityScanner } from './securityScanner';
+import { SecurityActionsProvider } from './securityActionsProvider';
+import { SecurityReportGenerator } from './securityReportGenerator';
 
 function updateStatusBar(statusBarItem: vscode.StatusBarItem) {
 	const config = vscode.workspace.getConfiguration('whatTheCode');
@@ -347,6 +350,15 @@ export function activate(context: vscode.ExtensionContext) {
 	   const visualizerActionsProvider = new VisualizerActionsProvider();
 	   vscode.window.createTreeView('what-the-code-visualizer', {
 			   treeDataProvider: visualizerActionsProvider,
+			   showCollapseAll: false
+	   });
+	   
+	   // Initialize Security Scanner
+	   const securityScanner = new SecurityScanner();
+	   const securityReportGenerator = new SecurityReportGenerator();
+	   const securityActionsProvider = new SecurityActionsProvider();
+	   vscode.window.createTreeView('what-the-code-security', {
+			   treeDataProvider: securityActionsProvider,
 			   showCollapseAll: false
 	   });
 	   
@@ -908,21 +920,125 @@ export function activate(context: vscode.ExtensionContext) {
            vscode.window.showErrorMessage(`Failed to open code visualizer: ${error}`);
        }
    });
-   
-   // Secondary status bar for search (updates based on privacy mode)
-   const searchStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99);
-   updateSearchStatusBar(searchStatusBarItem);
-   searchStatusBarItem.show();
-   context.subscriptions.push(searchStatusBarItem);
-   
-   // Update search status bar when privacy mode changes
-   context.subscriptions.push(
-	   vscode.workspace.onDidChangeConfiguration(e => {
-		   if (e.affectsConfiguration('whatTheCode.privacyMode')) {
-			   updateSearchStatusBar(searchStatusBarItem);
+	   
+	   // Security Scanner Commands
+	   const scanSecurityCommand = vscode.commands.registerCommand('what-the-code.scanSecurity', async () => {
+		   await vscode.window.withProgress({
+			   location: vscode.ProgressLocation.Notification,
+			   title: 'Scanning for security vulnerabilities...',
+			   cancellable: true
+		   }, async (progress, token) => {
+			   try {
+				   progress.report({ increment: 10, message: 'Collecting files...' });
+				   
+				   const result = await securityScanner.scanWorkspace();
+				   
+				   if (token.isCancellationRequested) {
+					   return;
+				   }
+				   
+				   progress.report({ increment: 90, message: 'Complete!' });
+				   
+				   securityActionsProvider.updateResults(result);
+				   
+				   if (result.totalIssues === 0) {
+					   vscode.window.showInformationMessage('✅ No security vulnerabilities detected! Your code is clean.');
+				   } else {
+					   const choice = await vscode.window.showWarningMessage(
+						   `🛡️ Found ${result.totalIssues} security issue(s): ${result.criticalCount} critical, ${result.highCount} high, ${result.mediumCount} medium, ${result.lowCount} low`,
+						   'View Details',
+						   'Generate Report'
+					   );
+					   
+					   if (choice === 'Generate Report') {
+						   vscode.commands.executeCommand('what-the-code.generateSecurityReport');
+					   }
+				   }
+				   
+			   } catch (error) {
+				   vscode.window.showErrorMessage(`Security scan failed: ${error}`);
+			   }
+		   });
+	   });
+	   
+	   const openSecurityIssueCommand = vscode.commands.registerCommand('what-the-code.openSecurityIssue', async (issue: any) => {
+		   try {
+			   const uri = vscode.Uri.file(issue.absolutePath);
+			   const document = await vscode.workspace.openTextDocument(uri);
+			   const editor = await vscode.window.showTextDocument(document);
+			   
+			   const range = new vscode.Range(issue.line - 1, 0, issue.line - 1, 0);
+			   editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+			   
+			   const decorationType = vscode.window.createTextEditorDecorationType({
+				   backgroundColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
+				   isWholeLine: true
+			   });
+			   editor.setDecorations(decorationType, [range]);
+			   
+			   setTimeout(() => decorationType.dispose(), 3000);
+		   } catch (error) {
+			   vscode.window.showErrorMessage(`Failed to open security issue: ${error}`);
 		   }
-	   })
-   );
+	   });
+	   
+	   const clearSecurityResultsCommand = vscode.commands.registerCommand('what-the-code.clearSecurityResults', () => {
+		   securityActionsProvider.clearResults();
+		   vscode.window.showInformationMessage('Security scan results cleared.');
+	   });
+	   
+	   const generateSecurityReportCommand = vscode.commands.registerCommand('what-the-code.generateSecurityReport', async () => {
+		   const results = securityActionsProvider.getResults();
+		   if (!results || results.totalIssues === 0) {
+			   vscode.window.showWarningMessage('No security scan results found. Please run a security scan first.');
+			   return;
+		   }
+		   
+		   await vscode.window.withProgress({
+			   location: vscode.ProgressLocation.Notification,
+			   title: 'Generating security report...',
+			   cancellable: false
+		   }, async (progress) => {
+			   try {
+				   progress.report({ increment: 50, message: 'Creating HTML report...' });
+				   
+				   const reportPath = await securityReportGenerator.generateSecurityReport(results);
+				   
+				   progress.report({ increment: 100, message: 'Complete!' });
+				   
+				   const choice = await vscode.window.showInformationMessage(
+					   `🛡️ Security report generated successfully!`,
+					   'Open Report',
+					   'Open Reports Folder'
+				   );
+				   
+				   if (choice === 'Open Report') {
+					   await securityReportGenerator.openReport(reportPath);
+				   } else if (choice === 'Open Reports Folder') {
+					   const uri = vscode.Uri.file(securityReportGenerator.getReportsPath());
+					   await vscode.env.openExternal(uri);
+				   }
+				   
+			   } catch (error) {
+				   vscode.window.showErrorMessage(`Failed to generate security report: ${error}`);
+			   }
+		   });
+	   });
+	   
+	   // Secondary status bar for search (updates based on privacy mode)
+	   const searchStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99);
+	   updateSearchStatusBar(searchStatusBarItem);
+	   searchStatusBarItem.show();
+	   context.subscriptions.push(searchStatusBarItem);
+	   
+	   // Update search status bar when privacy mode changes
+	   context.subscriptions.push(
+		   vscode.workspace.onDidChangeConfiguration(e => {
+			   if (e.affectsConfiguration('whatTheCode.privacyMode')) {
+				   updateSearchStatusBar(searchStatusBarItem);
+			   }
+		   })
+	   );
    
    const codeQualityStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 98);
 	codeQualityStatusBar.text = '$(checklist) Code Quality';
@@ -976,7 +1092,14 @@ export function activate(context: vscode.ExtensionContext) {
 			   reportsProvider,
 			   openCodeVisualizerCommand,
 			   codeVisualizerProvider,
-			   visualizerActionsProvider
+			   visualizerActionsProvider,
+			   scanSecurityCommand,
+			   openSecurityIssueCommand,
+			   clearSecurityResultsCommand,
+			   generateSecurityReportCommand,
+			   securityScanner,
+			   securityReportGenerator,
+			   securityActionsProvider
 	   );
 	   console.log('✅ What-The-Code extension fully activated!');
 }

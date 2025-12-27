@@ -37,3 +37,49 @@ export interface CodeSnapshot {
 	content: string;
 	language: string;
 }
+
+export interface SecurityIssue {
+	type: SecurityVulnerabilityType;
+	severity: 'critical' | 'high' | 'medium' | 'low';
+	filePath: string;
+	relativePath: string;
+	line: number;
+	column: number;
+	code: string;
+	message: string;
+	description: string;
+	recommendation: string;
+	cweId?: string;
+	owaspCategory?: string;
+	confidence: 'high' | 'medium' | 'low';
+}
+
+export type SecurityVulnerabilityType = 
+	| 'hardcoded-secret'
+	| 'sql-injection'
+	| 'xss-vulnerability'
+	| 'command-injection'
+	| 'path-traversal'
+	| 'insecure-random'
+	| 'weak-crypto'
+	| 'unsafe-eval'
+	| 'prototype-pollution'
+	| 'xxe-vulnerability'
+	| 'open-redirect'
+	| 'insecure-deserialization'
+	| 'sensitive-data-exposure'
+	| 'cors-misconfiguration'
+	| 'csrf-vulnerability'
+	| 'information-disclosure';
+
+export interface SecurityScanResult {
+	issues: SecurityIssue[];
+	filesScanned: number;
+	totalIssues: number;
+	criticalCount: number;
+	highCount: number;
+	mediumCount: number;
+	lowCount: number;
+	scanDuration: number;
+	timestamp: Date;
+}

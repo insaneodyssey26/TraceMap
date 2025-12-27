@@ -186,6 +186,30 @@
         "title": "🌳 Open Code Visualizer",
         "category": "What-The-Code",
         "icon": "$(type-hierarchy)"
+      },
+      {
+        "command": "what-the-code.scanSecurity",
+        "title": "🛡️ Scan for Security Vulnerabilities",
+        "category": "What-The-Code",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "what-the-code.openSecurityIssue",
+        "title": "Open Security Issue",
+        "category": "What-The-Code",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "what-the-code.clearSecurityResults",
+        "title": "Clear Security Results",
+        "category": "What-The-Code",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "what-the-code.generateSecurityReport",
+        "title": "📋 Generate Security Report",
+        "category": "What-The-Code",
+        "icon": "$(file-text)"
       }
     ],
     "viewsContainers": {
@@ -234,6 +258,12 @@
           "name": "🌳 Code Visualizer",
           "when": "true",
           "icon": "$(type-hierarchy)"
+        },
+        {
+          "id": "what-the-code-security",
+          "name": "🛡️ Security Scanner",
+          "when": "true",
+          "icon": "$(shield)"
         }
       ]
     },
@@ -334,6 +364,24 @@
           "when": "view == what-the-code-visualizer",
           "group": "navigation@1",
           "icon": "$(type-hierarchy)"
+        },
+        {
+          "command": "what-the-code.scanSecurity",
+          "when": "view == what-the-code-security",
+          "group": "navigation@1",
+          "icon": "$(shield)"
+        },
+        {
+          "command": "what-the-code.generateSecurityReport",
+          "when": "view == what-the-code-security",
+          "group": "navigation@2",
+          "icon": "$(file-text)"
+        },
+        {
+          "command": "what-the-code.clearSecurityResults",
+          "when": "view == what-the-code-security",
+          "group": "navigation@3",
+          "icon": "$(clear-all)"
         }
       ],
       "view/item/context": [
@@ -360,6 +408,12 @@
           "when": "view == what-the-code-reports && viewItem == report",
           "group": "inline@2",
           "icon": "$(trash)"
+        },
+        {
+          "command": "what-the-code.openSecurityIssue",
+          "when": "view == what-the-code-security && viewItem == securityIssue",
+          "group": "inline@1",
+          "icon": "$(go-to-file)"
         }
       ]
     },
@@ -383,6 +437,11 @@
         "command": "what-the-code.openCodeVisualizer",
         "key": "ctrl+shift+alt+v",
         "mac": "cmd+shift+alt+v"
+      },
+      {
+        "command": "what-the-code.scanSecurity",
+        "key": "ctrl+shift+alt+s",
+        "mac": "cmd+shift+alt+s"
       }
     ],
     "configuration": {
