@@ -83,3 +83,43 @@ export interface SecurityScanResult {
 	scanDuration: number;
 	timestamp: Date;
 }
+export interface FunctionComplexity {
+	name: string;
+	line: number;
+	endLine: number;
+	cyclomaticComplexity: number;
+	cognitiveComplexity: number;
+	nestedDepth: number;
+	linesOfCode: number;
+	parameters: number;
+}
+
+export interface FileComplexity {
+	filePath: string;
+	relativePath: string;
+	language: string;
+	totalLines: number;
+	codeLines: number;
+	commentLines: number;
+	blankLines: number;
+	functions: FunctionComplexity[];
+	averageCyclomaticComplexity: number;
+	averageCognitiveComplexity: number;
+	maxCyclomaticComplexity: number;
+	maxCognitiveComplexity: number;
+	maxNestedDepth: number;
+	maintainabilityIndex: number;
+	complexityScore: number; // 0-100, higher is more complex
+}
+
+export interface ComplexityHeatmapData {
+	files: FileComplexity[];
+	totalFiles: number;
+	averageComplexity: number;
+	highComplexityFiles: number; // score > 70
+	mediumComplexityFiles: number; // score 40-70
+	lowComplexityFiles: number; // score < 40
+	mostComplexFile: FileComplexity | null;
+	timestamp: Date;
+	scanDuration: number;
+}

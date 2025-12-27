@@ -210,6 +210,24 @@
         "title": "📋 Generate Security Report",
         "category": "What-The-Code",
         "icon": "$(file-text)"
+      },
+      {
+        "command": "what-the-code.generateComplexityHeatmap",
+        "title": "📊 Generate Complexity Heatmap",
+        "category": "What-The-Code",
+        "icon": "$(graph-line)"
+      },
+      {
+        "command": "what-the-code.analyzeComplexity",
+        "title": "🔍 Analyze Complexity",
+        "category": "What-The-Code",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "what-the-code.clearComplexityResults",
+        "title": "Clear Complexity Results",
+        "category": "What-The-Code",
+        "icon": "$(clear-all)"
       }
     ],
     "viewsContainers": {
@@ -264,6 +282,12 @@
           "name": "🛡️ Security Scanner",
           "when": "true",
           "icon": "$(shield)"
+        },
+        {
+          "id": "what-the-code-complexity",
+          "name": "📊 Complexity Analysis",
+          "when": "true",
+          "icon": "$(graph-line)"
         }
       ]
     },
@@ -292,6 +316,12 @@
           "when": "view == what-the-code-main-actions",
           "group": "navigation@4",
           "icon": "$(settings-gear)"
+        },
+        {
+          "command": "what-the-code.generateComplexityHeatmap",
+          "when": "view == what-the-code-main-actions",
+          "group": "navigation@5",
+          "icon": "$(graph-line)"
         },
         {
           "command": "what-the-code.clearResults",
@@ -360,6 +390,12 @@
           "icon": "$(trophy)"
         },
         {
+          "command": "what-the-code.generateComplexityHeatmap",
+          "when": "view == what-the-code-reports",
+          "group": "navigation@5",
+          "icon": "$(graph-line)"
+        },
+        {
           "command": "what-the-code.openCodeVisualizer",
           "when": "view == what-the-code-visualizer",
           "group": "navigation@1",
@@ -380,6 +416,24 @@
         {
           "command": "what-the-code.clearSecurityResults",
           "when": "view == what-the-code-security",
+          "group": "navigation@3",
+          "icon": "$(clear-all)"
+        },
+        {
+          "command": "what-the-code.analyzeComplexity",
+          "when": "view == what-the-code-complexity",
+          "group": "navigation@1",
+          "icon": "$(sync)"
+        },
+        {
+          "command": "what-the-code.generateComplexityHeatmap",
+          "when": "view == what-the-code-complexity",
+          "group": "navigation@2",
+          "icon": "$(graph-line)"
+        },
+        {
+          "command": "what-the-code.clearComplexityResults",
+          "when": "view == what-the-code-complexity",
           "group": "navigation@3",
           "icon": "$(clear-all)"
         }
@@ -442,6 +496,11 @@
         "command": "what-the-code.scanSecurity",
         "key": "ctrl+shift+alt+s",
         "mac": "cmd+shift+alt+s"
+      },
+      {
+        "command": "what-the-code.generateComplexityHeatmap",
+        "key": "ctrl+shift+alt+c",
+        "mac": "cmd+shift+alt+c"
       }
     ],
     "configuration": {

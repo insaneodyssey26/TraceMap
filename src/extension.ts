@@ -20,6 +20,9 @@ import { VisualizerActionsProvider } from './visualizerActionsProvider';
 import { SecurityScanner } from './securityScanner';
 import { SecurityActionsProvider } from './securityActionsProvider';
 import { SecurityReportGenerator } from './securityReportGenerator';
+import { ComplexityAnalyzer } from './complexityAnalyzer';
+import { ComplexityHeatmapGenerator } from './complexityHeatmapGenerator';
+import { ComplexityActionsProvider } from './complexityActionsProvider';
 
 function updateStatusBar(statusBarItem: vscode.StatusBarItem) {
 	const config = vscode.workspace.getConfiguration('whatTheCode');
@@ -359,6 +362,14 @@ export function activate(context: vscode.ExtensionContext) {
 	   const securityActionsProvider = new SecurityActionsProvider();
 	   vscode.window.createTreeView('what-the-code-security', {
 			   treeDataProvider: securityActionsProvider,
+			   showCollapseAll: false
+	   });
+
+	   const complexityAnalyzer = new ComplexityAnalyzer();
+	   const complexityHeatmapGenerator = new ComplexityHeatmapGenerator();
+	   const complexityActionsProvider = new ComplexityActionsProvider();
+	   vscode.window.createTreeView('what-the-code-complexity', {
+			   treeDataProvider: complexityActionsProvider,
 			   showCollapseAll: false
 	   });
 	   
@@ -1025,6 +1036,91 @@ export function activate(context: vscode.ExtensionContext) {
 		   });
 	   });
 	   
+	   // Complexity Heatmap Commands
+	   
+	   const analyzeComplexityCommand = vscode.commands.registerCommand('what-the-code.analyzeComplexity', async () => {
+		   await vscode.window.withProgress({
+			   location: vscode.ProgressLocation.Notification,
+			   title: 'Analyzing code complexity...',
+			   cancellable: true
+		   }, async (progress, token) => {
+			   try {
+				   progress.report({ increment: 20, message: 'Collecting files...' });
+				   
+				   if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
+					   vscode.window.showErrorMessage('No workspace folder open');
+					   return;
+				   }
+				   
+				   const workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
+				   const data = await complexityAnalyzer.analyzeWorkspace();
+				   
+				   if (token.isCancellationRequested) {
+					   return;
+				   }
+				   
+				   progress.report({ increment: 100, message: 'Complete!' });
+				   
+				   // Update the tree view
+				   complexityActionsProvider.updateComplexityData(data.files, workspaceRoot);
+				   
+				   vscode.window.showInformationMessage(
+					   `📊 Analyzed ${data.totalFiles} files. Average complexity: ${data.averageComplexity}/100`
+				   );
+				   
+			   } catch (error) {
+				   vscode.window.showErrorMessage(`Failed to analyze complexity: ${error}`);
+			   }
+		   });
+	   });
+
+	   const clearComplexityResultsCommand = vscode.commands.registerCommand('what-the-code.clearComplexityResults', () => {
+		   complexityActionsProvider.clear();
+		   vscode.window.showInformationMessage('Complexity results cleared');
+	   });
+	   
+	   const generateComplexityHeatmapCommand = vscode.commands.registerCommand('what-the-code.generateComplexityHeatmap', async () => {
+		   await vscode.window.withProgress({
+			   location: vscode.ProgressLocation.Notification,
+			   title: 'Analyzing code complexity...',
+			   cancellable: true
+		   }, async (progress, token) => {
+			   try {
+				   progress.report({ increment: 20, message: 'Collecting files...' });
+				   
+				   const data = await complexityAnalyzer.analyzeWorkspace();
+				   
+				   if (token.isCancellationRequested) {
+					   return;
+				   }
+				   
+				   progress.report({ increment: 70, message: 'Generating heatmap...' });
+				   
+				   const reportPath = await complexityHeatmapGenerator.generateHeatmap(data);
+				   
+				   progress.report({ increment: 100, message: 'Complete!' });
+				   
+				   const choice = await vscode.window.showInformationMessage(
+					   `📊 Complexity heatmap generated! Analyzed ${data.totalFiles} files. Average complexity: ${data.averageComplexity}/100`,
+					   'Open Heatmap',
+					   'Open Reports Folder'
+				   );
+				   
+				   if (choice === 'Open Heatmap') {
+					   await complexityHeatmapGenerator.openHeatmap(reportPath);
+				   } else if (choice === 'Open Reports Folder') {
+					   const uri = vscode.Uri.file(complexityHeatmapGenerator.getReportsPath());
+					   await vscode.env.openExternal(uri);
+				   }
+				   
+				   reportsProvider.refresh();
+				   
+			   } catch (error) {
+				   vscode.window.showErrorMessage(`Failed to generate complexity heatmap: ${error}`);
+			   }
+		   });
+	   });
+	   
 	   // Secondary status bar for search (updates based on privacy mode)
 	   const searchStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99);
 	   updateSearchStatusBar(searchStatusBarItem);
@@ -1099,7 +1195,12 @@ export function activate(context: vscode.ExtensionContext) {
 			   generateSecurityReportCommand,
 			   securityScanner,
 			   securityReportGenerator,
-			   securityActionsProvider
+			   securityActionsProvider,
+			   analyzeComplexityCommand,
+			   clearComplexityResultsCommand,
+			   generateComplexityHeatmapCommand,
+			   complexityAnalyzer,
+			   complexityHeatmapGenerator
 	   );
 	   console.log('✅ What-The-Code extension fully activated!');
 }
