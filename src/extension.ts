@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { CodeCollector } from './codeCollector';
 import { GeminiProvider, PromptBuilder } from './aiProviders';
+import { LocalSearchProvider } from './localSearchProvider';
 import { SearchResult, AIProvider } from './types';
 import { SearchResultsProvider } from './searchResultsProvider';
 import { SnapshotProvider } from './snapshotProvider';
@@ -29,6 +30,38 @@ function updateStatusBar(statusBarItem: vscode.StatusBarItem) {
 		statusBarItem.text = '$(pulse) Code Quality';
 		statusBarItem.tooltip = 'Click to analyze current file quality';
 		statusBarItem.backgroundColor = undefined;
+	}
+}
+
+function updatePrivacyModeStatusBar(statusBarItem: vscode.StatusBarItem) {
+	const config = vscode.workspace.getConfiguration('whatTheCode');
+	const privacyMode = config.get<boolean>('privacyMode', false);
+	
+	if (privacyMode) {
+		statusBarItem.text = '$(shield-check) Private';
+		statusBarItem.tooltip = '🔒 Privacy Mode: ON\nAll features run locally, no external API calls.\nClick to disable Privacy Mode.';
+		statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.prominentBackground');
+		statusBarItem.color = new vscode.ThemeColor('statusBarItem.prominentForeground');
+	} else {
+		statusBarItem.text = '$(globe) Public';
+		statusBarItem.tooltip = '🌐 Privacy Mode: OFF\nAI features are available.\nClick to enable Privacy Mode.';
+		statusBarItem.backgroundColor = undefined;
+		statusBarItem.color = undefined;
+	}
+}
+
+function updateSearchStatusBar(statusBarItem: vscode.StatusBarItem) {
+	const config = vscode.workspace.getConfiguration('whatTheCode');
+	const privacyMode = config.get<boolean>('privacyMode', false);
+	
+	statusBarItem.command = 'what-the-code.searchCode';
+	
+	if (privacyMode) {
+		statusBarItem.text = '$(search) Local Search';
+		statusBarItem.tooltip = 'Search code locally (Privacy Mode) - Ctrl+Shift+Alt+K';
+	} else {
+		statusBarItem.text = '$(search) Ask Code';
+		statusBarItem.tooltip = 'Search your code with AI (Ctrl+Shift+Alt+K)';
 	}
 }
 
@@ -106,29 +139,53 @@ class CodeSearchProvider {
 			   try {
 					   this.outputChannel.appendLine(`🔍 Searching for: "${query}"`);
 					   this.outputChannel.show(true);
+					   
+					   const privacyMode = isPrivacyModeEnabled();
+					   
 					   progress.report({ increment: 10, message: 'Collecting code files...' });
 					   const allFiles = await this.codeCollector.collectCodeFiles();
 					   this.outputChannel.appendLine(`📁 Found ${allFiles.length} code files`);
+					   
 					   if (token.isCancellationRequested) { return []; }
 					   if (allFiles.length === 0) {
 							   vscode.window.showWarningMessage('No code files found in the workspace.');
 							   return [];
 					   }
+					   
 					   progress.report({ increment: 20, message: 'Prioritizing files...' });
 					   const relevantFiles = this.codeCollector.prioritizeFiles(allFiles, query);
 					   this.outputChannel.appendLine(`🎯 Selected ${relevantFiles.length} most relevant files`);
+					   
 					   if (token.isCancellationRequested) { return []; }
+					   
+					   // Use local search in Privacy Mode
+					   if (privacyMode) {
+						   progress.report({ increment: 30, message: 'Searching locally (Privacy Mode)...' });
+						   this.outputChannel.appendLine(`🔒 Using local search (Privacy Mode enabled)`);
+						   
+						   const localSearch = new LocalSearchProvider();
+						   const results = await localSearch.searchLocally(query, relevantFiles);
+						   
+						   this.outputChannel.appendLine(`✅ Found ${results.length} matches using local search`);
+						   return results;
+					   }
+					   
+					   // Use AI search when Privacy Mode is disabled
 					   progress.report({ increment: 20, message: 'Building prompt...' });
 					   const context = PromptBuilder.buildContextSection(relevantFiles);
 					   const prompt = PromptBuilder.buildCodeSearchPrompt(query, context);
 					   this.outputChannel.appendLine(`📝 Prepared prompt (${prompt.length} characters)`);
+					   
 					   if (token.isCancellationRequested) { return []; }
+					   
 					   progress.report({ increment: 30, message: 'Querying AI...' });
 					   const aiProvider = this.getAIProvider();
 					   this.outputChannel.appendLine(`🤖 Using ${aiProvider.name} provider`);
 					   const response = await aiProvider.query(prompt);
 					   this.outputChannel.appendLine(`✅ Received AI response (${response.length} characters)`);
+					   
 					   if (token.isCancellationRequested) { return []; }
+					   
 					   progress.report({ increment: 10, message: 'Parsing results...' });
 					   const results = this.parseResults(response);
 					   this.outputChannel.appendLine(`🎯 Parsed ${results.length} relevant code sections`);
@@ -218,7 +275,23 @@ async function showWelcomeMessage(context: vscode.ExtensionContext) {
 export function activate(context: vscode.ExtensionContext) {
 	   console.log('🚀 What-The-Code extension is now activating!');
 	   
-	   // Create Status Bar Item
+	   // Create Privacy Mode Toggle Status Bar Item (leftmost, highest priority)
+	   const privacyModeStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 101);
+	   privacyModeStatusBar.command = 'what-the-code.togglePrivacyMode';
+	   updatePrivacyModeStatusBar(privacyModeStatusBar);
+	   privacyModeStatusBar.show();
+	   context.subscriptions.push(privacyModeStatusBar);
+	   
+	   // Watch for privacy mode changes to update all status bars
+	   context.subscriptions.push(
+		   vscode.workspace.onDidChangeConfiguration(e => {
+			   if (e.affectsConfiguration('whatTheCode.privacyMode')) {
+				   updatePrivacyModeStatusBar(privacyModeStatusBar);
+			   }
+		   })
+	   );
+	   
+	   // Create Status Bar Item for Code Quality
 	   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
 	   statusBarItem.command = 'what-the-code.analyzeCurrentFile';
 	   updateStatusBar(statusBarItem);
@@ -282,32 +355,27 @@ export function activate(context: vscode.ExtensionContext) {
 	   const searchCommand = vscode.commands.registerCommand('what-the-code.searchCode', async () => {
 			   console.log('🔍 Search command triggered!');
 			   
-			   // Check privacy mode
-			   if (isPrivacyModeEnabled()) {
-				   const choice = await vscode.window.showWarningMessage(
-					   '🔒 Privacy Mode is enabled. The "Ask Your Code" feature requires AI (Gemini) and is disabled in Privacy Mode.\n\nAll other features (Dead Code Analysis, Quality Reports) work offline.',
-					   'Disable Privacy Mode',
-					   'Keep Privacy Mode',
-					   'Learn More'
-				   );
-				   
-				   if (choice === 'Disable Privacy Mode') {
-					   await vscode.workspace.getConfiguration('whatTheCode').update('privacyMode', false, vscode.ConfigurationTarget.Global);
-					   vscode.window.showInformationMessage('Privacy Mode disabled. AI features are now available.');
-					   return;
-				   } else if (choice === 'Learn More') {
-					   vscode.env.openExternal(vscode.Uri.parse('https://github.com/insaneodyssey26/what-the-code#privacy-mode'));
-				   }
-				   return;
-			   }
-			   
 			   try {
 					   console.log('Opening search dialog...');
+					   
+					   // Show privacy mode info if enabled
+					   const privacyMode = isPrivacyModeEnabled();
+					   let placeholder = 'e.g., "Where is user authentication handled?"';
+					   let prompt = 'Ask a question about your code';
+					   let title = 'What-The-Code: Ask Your Code';
+					   
+					   if (privacyMode) {
+						   placeholder = '🔒 Privacy Mode: Using local search (e.g., "authentication functions")';
+						   prompt = 'Search your code locally (keyword-based)';
+						   title = 'What-The-Code: Local Search (Privacy Mode)';
+					   }
+					   
 					   const query = await vscode.window.showInputBox({
-							   placeHolder: 'e.g., "Where is user authentication handled?"',
-							   prompt: 'Ask a question about your code',
-							   title: 'What-The-Code: Ask Your Code'
+							   placeHolder: placeholder,
+							   prompt: prompt,
+							   title: title
 					   });
+					   
 					   console.log(`User query: ${query}`);
 					   if (!query || query.trim().length === 0) {
 							   console.log('No query provided, exiting');
@@ -841,13 +909,20 @@ export function activate(context: vscode.ExtensionContext) {
        }
    });
    
-   // Secondary status bar for search (optional)
+   // Secondary status bar for search (updates based on privacy mode)
    const searchStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99);
-   searchStatusBarItem.text = '$(search) Ask Code';
-   searchStatusBarItem.command = 'what-the-code.searchCode';
-   searchStatusBarItem.tooltip = 'Search your code with AI (Ctrl+Shift+Alt+K)';
+   updateSearchStatusBar(searchStatusBarItem);
    searchStatusBarItem.show();
    context.subscriptions.push(searchStatusBarItem);
+   
+   // Update search status bar when privacy mode changes
+   context.subscriptions.push(
+	   vscode.workspace.onDidChangeConfiguration(e => {
+		   if (e.affectsConfiguration('whatTheCode.privacyMode')) {
+			   updateSearchStatusBar(searchStatusBarItem);
+		   }
+	   })
+   );
    
    const codeQualityStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 98);
 	codeQualityStatusBar.text = '$(checklist) Code Quality';

@@ -8,18 +8,24 @@
 
 **Enterprise-Ready Privacy:** Most features run **entirely offline** on your machine. No data leaves your computer.
 
+- ✅ **Local Code Search** – Keyword-based search, works 100% offline
 - ✅ **Dead Code Analysis** – 100% local static analysis
 - ✅ **Code Quality Reports** – All metrics computed locally  
 - ✅ **Type Safety Checks** – Offline pattern matching
 - ✅ **Refactoring Suggestions** – Local complexity analysis
 - ✅ **Performance Monitoring** – Everything stays on your machine
-- ⭐ **AI Code Search** – *Optional* (requires Gemini API, can be disabled)
+- ⭐ **AI Code Search** – *Optional upgrade* (requires Gemini API)
 
-**Enable Privacy Mode** in settings to disable all AI features. Perfect for:
+**Both search modes available:**
+1. **Local Search (Privacy Mode)** – Fast keyword matching, no API needed
+2. **AI Search** – Natural language understanding with Gemini
+
+**Enable Privacy Mode** in settings to use only local features. Perfect for:
 - Proprietary codebases
 - Sensitive projects
 - Offline environments
 - Security-conscious teams
+- No API key required!
 
 ---
 
@@ -40,24 +46,41 @@
 ### Quick Start (Privacy Mode - No API Key Needed)
 
 1. **Install** from the VS Code Marketplace
-2. **Enable Privacy Mode** (optional) in settings: `whatTheCode.privacyMode`
-3. **Use all features** except AI search – everything runs locally!
-4. **Click** the status bar button to analyze your current file
+2. **Click the status bar** – Look for 🌐 **Public** / 🔒 **Private** badge
+3. **Toggle to Private** – One click for full privacy
+4. **Use ALL features** including search – everything runs locally!
+5. **Press** `Ctrl+Shift+Alt+K` to search code with keywords
 
-### With AI Features (Optional)
+### With AI Features (Optional Upgrade)
 
-1. **Get a Gemini API key** from [Google AI Studio](https://aistudio.google.com/app/apikey)
-2. **Enter your API key** in VS Code settings (search for "What-The-Code")
-3. **Press** `Ctrl+Shift+Alt+K` to use AI-powered code search
-4. **Toggle Privacy Mode** anytime with the command palette
+1. **Click the Privacy badge** in the status bar
+2. **Switch to Public mode**
+3. **Get a Gemini API key** from [Google AI Studio](https://aistudio.google.com/app/apikey)
+4. **Enter your API key** in VS Code settings (search for "What-The-Code")
+5. **Press** `Ctrl+Shift+Alt+K` to use advanced semantic search
+6. **Toggle back to Private** anytime with one click!
 
 ---
 
 ## Key Features
 
+### � Dual Search System
+- **Local Search (Privacy Mode)** – Keyword and pattern matching, 100% offline
+  - Intelligent keyword extraction and synonym matching
+  - Context-aware ranking
+  - Finds functions, classes, imports, API calls automatically
+  - No API key required
+- **AI Search** – Natural language understanding with Gemini
+  - "Where is authentication handled?"
+  - Understands intent and context
+  - Better for complex queries
+
 ### 🔒 Privacy-First Design
-- **Privacy Mode Toggle** – One click to disable all external API calls
-- **Visual Indicator** – Status bar shows when Privacy Mode is active
+- **One-Click Privacy Toggle** – Status bar button to instantly switch modes
+- **Visual Indicators** – 
+  - 🔒 **Private** badge: All features run locally
+  - 🌐 **Public** badge: AI features available
+- **Automatic Fallback** – Local search activates in Privacy Mode
 - **No Silent Data Transfer** – You control what leaves your machine
 - **Enterprise-Ready** – Perfect for confidential codebases
 
@@ -145,14 +168,23 @@
 Many companies don't allow sending proprietary code to external APIs. Privacy Mode ensures all analysis runs locally – no data leaves your machine.
 
 **What exactly uses AI vs local analysis?**  
-- **Local (works in Privacy Mode):** Dead code detection, quality metrics, type safety checks, complexity analysis, refactoring suggestions
-- **Uses AI (disabled in Privacy Mode):** Natural language code search ("Ask Your Code")
+- **Local (works in Privacy Mode):** Code search (keyword-based), dead code detection, quality metrics, type safety checks, complexity analysis, refactoring suggestions
+- **Uses AI (optional upgrade):** Natural language code search with semantic understanding
+
+**How good is local search compared to AI?**  
+Local search is excellent for specific queries like "authentication functions", "API calls", "form handlers". AI search is better for complex, natural language queries like "Where do we validate user input before saving to database?"
+
+**Can I use both search modes?**  
+Yes! Toggle Privacy Mode on/off anytime. Local search is always available, AI search requires an API key.
 
 **How do I enable Privacy Mode?**  
-Open settings (Ctrl+,), search "What-The-Code", toggle "Privacy Mode". Or use Command Palette → "Toggle Privacy Mode"
+Click the status bar badge (🌐 **Public** / 🔒 **Private**) for instant toggle. Or use Command Palette → "Toggle Privacy Mode", or go to Settings.
 
 **Can I see Privacy Mode status?**  
-Yes! The status bar shows a shield icon (🔒) when Privacy Mode is active.
+Yes! Three places:
+1. Status bar shows 🔒 **Private** badge (highlighted) when active
+2. Search button shows "Local Search" in Privacy Mode
+3. Code Quality button shows "(Private)" indicator
 
 **What is dead code?**  
 Code that is never used or run, like old functions or imports you forgot to delete.
