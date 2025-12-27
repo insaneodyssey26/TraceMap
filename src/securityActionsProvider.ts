@@ -114,9 +114,9 @@ export class SecurityActionsProvider implements vscode.TreeDataProvider<Security
 			return Promise.resolve(issues.map(issue => {
 				const item = new SecurityTreeItem(
 					`${this.getVulnerabilityIcon(issue.type)} ${issue.message}`,
-					`Line ${issue.line}`,
+					`${issue.relativePath}:${issue.line}:${issue.column}`,
 					vscode.TreeItemCollapsibleState.None,
-					'issue',
+					'securityIssue',
 					{
 						command: 'what-the-code.openSecurityIssue',
 						title: 'Open Issue',

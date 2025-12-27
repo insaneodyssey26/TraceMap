@@ -963,7 +963,7 @@ export function activate(context: vscode.ExtensionContext) {
 	   
 	   const openSecurityIssueCommand = vscode.commands.registerCommand('what-the-code.openSecurityIssue', async (issue: any) => {
 		   try {
-			   const uri = vscode.Uri.file(issue.absolutePath);
+			   const uri = vscode.Uri.file(issue.filePath);
 			   const document = await vscode.workspace.openTextDocument(uri);
 			   const editor = await vscode.window.showTextDocument(document);
 			   

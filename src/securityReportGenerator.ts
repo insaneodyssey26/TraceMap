@@ -698,7 +698,6 @@ export class SecurityReportGenerator {
 	getReportsPath(): string {
 		return this.reportsPath;
 	}
-6
 	dispose(): void {
 		this.outputChannel.dispose();
 	}
