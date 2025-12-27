@@ -1,0 +1,476 @@
+{
+  "name": "what-the-code",
+  "displayName": "What-The-Code",
+  "icon": "media/logo.png",
+  "description": "AI-powered code search, dead code analysis, and file snapshots. Ask questions about your codebase, find unused code, and create checkpoints.",
+  "version": "1.1.20",
+  "publisher": "saheli56",
+  "author": {
+    "name": "Sk Masum Ali and Saheli Das"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/insaneodyssey26/what-the-code.git"
+  },
+  "bugs": {
+    "url": "https://github.com/insaneodyssey26/what-the-code/issues"
+  },
+  "homepage": "https://github.com/insaneodyssey26/what-the-code#readme",
+  "keywords": [
+    "ai",
+    "code-search",
+    "dead-code",
+    "analysis",
+    "gemini",
+    "snapshot",
+    "refactor",
+    "cleanup",
+    "search",
+    "assistant"
+  ],
+  "categories": [
+    "Other",
+    "Machine Learning",
+    "Snippets"
+  ],
+  "engines": {
+    "vscode": "^1.101.0"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "what-the-code.searchCode",
+        "title": "🔍 Ask Your Code",
+        "category": "What-The-Code",
+        "icon": "$(search)"
+      },
+      {
+        "command": "what-the-code.testExtension",
+        "title": "Test Extension",
+        "category": "What-The-Code",
+        "icon": "$(beaker)"
+      },
+      {
+        "command": "what-the-code.testGemini",
+        "title": "🔌 Test Gemini Connection",
+        "category": "What-The-Code",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "what-the-code.openSettings",
+        "title": "⚙️ Configure Settings",
+        "category": "What-The-Code",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "what-the-code.openResult",
+        "title": "Open Search Result",
+        "category": "What-The-Code",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "what-the-code.clearResults",
+        "title": "Clear Search Results",
+        "category": "What-The-Code",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "what-the-code.saveSnapshot",
+        "title": "📌 Save Snapshot",
+        "category": "What-The-Code",
+        "icon": "$(save)"
+      },
+      {
+        "command": "what-the-code.openSnapshot",
+        "title": "Open Snapshot",
+        "category": "What-The-Code",
+        "icon": "$(file-code)"
+      },
+      {
+        "command": "what-the-code.restoreSnapshot",
+        "title": "🔄 Restore Snapshot",
+        "category": "What-The-Code",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "what-the-code.deleteSnapshot",
+        "title": "Delete Snapshot",
+        "category": "What-The-Code",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "what-the-code.clearAllSnapshots",
+        "title": "Clear All Snapshots",
+        "category": "What-The-Code",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "what-the-code.findDeadCode",
+        "title": "🧹 Find Dead Code",
+        "category": "What-The-Code",
+        "icon": "$(search-remove)"
+      },
+      {
+        "command": "what-the-code.removeDeadCodeSafe",
+        "title": "✅ Remove Dead Code (Safe)",
+        "category": "What-The-Code",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "what-the-code.removeDeadCodeInteractive",
+        "title": "🔧 Remove Dead Code (Interactive)",
+        "category": "What-The-Code",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "what-the-code.removeDeadCodeDryRun",
+        "title": "🔍 Preview Removal (Dry Run)",
+        "category": "What-The-Code",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "what-the-code.generateFileReport",
+        "title": "📄 Generate File Report",
+        "category": "What-The-Code",
+        "icon": "$(file-text)"
+      },
+      {
+        "command": "what-the-code.generateProjectReport",
+        "title": "📊 Generate Project Report",
+        "category": "What-The-Code",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "what-the-code.openReportsFolder",
+        "title": "📁 Open Reports Folder",
+        "category": "What-The-Code",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "what-the-code.openReport",
+        "title": "📖 Open Report",
+        "category": "What-The-Code",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "what-the-code.deleteReport",
+        "title": "🗑️ Delete Report",
+        "category": "What-The-Code",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "what-the-code.openTeamLeaderboard",
+        "title": "🏆 Open Team Leaderboard",
+        "category": "What-The-Code",
+        "icon": "$(trophy)"
+      },
+      {
+        "command": "what-the-code.openCodeVisualizer",
+        "title": "🌳 Open Code Visualizer",
+        "category": "What-The-Code",
+        "icon": "$(type-hierarchy)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "what-the-code",
+          "title": "What-The-Code",
+          "icon": "media/search.svg"
+        }
+      ]
+    },
+    "views": {
+      "what-the-code": [
+        {
+          "id": "what-the-code-main-actions",
+          "name": "🚀 Main Actions",
+          "when": "true",
+          "icon": "$(rocket)"
+        },
+        {
+          "id": "what-the-code-results",
+          "name": "🔍 Search Results",
+          "when": "true",
+          "icon": "$(search-view-icon)"
+        },
+        {
+          "id": "what-the-code-snapshots",
+          "name": "📸 Code Snapshots",
+          "when": "true",
+          "icon": "$(save-all)"
+        },
+        {
+          "id": "what-the-code-dead-code",
+          "name": "🧹 Dead Code Analysis",
+          "when": "true",
+          "icon": "$(search-remove)"
+        },
+        {
+          "id": "what-the-code-reports",
+          "name": "📄 Quality Reports",
+          "when": "true",
+          "icon": "$(file-text)"
+        },
+        {
+          "id": "what-the-code-visualizer",
+          "name": "🌳 Code Visualizer",
+          "when": "true",
+          "icon": "$(type-hierarchy)"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "what-the-code.searchCode",
+          "when": "view == what-the-code-main-actions",
+          "group": "navigation@1",
+          "icon": "$(search)"
+        },
+        {
+          "command": "what-the-code.saveSnapshot",
+          "when": "view == what-the-code-main-actions",
+          "group": "navigation@2",
+          "icon": "$(save)"
+        },
+        {
+          "command": "what-the-code.testGemini",
+          "when": "view == what-the-code-main-actions",
+          "group": "navigation@3",
+          "icon": "$(plug)"
+        },
+        {
+          "command": "what-the-code.openSettings",
+          "when": "view == what-the-code-main-actions",
+          "group": "navigation@4",
+          "icon": "$(settings-gear)"
+        },
+        {
+          "command": "what-the-code.clearResults",
+          "when": "view == what-the-code-results",
+          "group": "navigation",
+          "icon": "$(clear-all)"
+        },
+        {
+          "command": "what-the-code.saveSnapshot",
+          "when": "view == what-the-code-snapshots",
+          "group": "navigation@1",
+          "icon": "$(save)"
+        },
+        {
+          "command": "what-the-code.clearAllSnapshots",
+          "when": "view == what-the-code-snapshots",
+          "group": "navigation@2",
+          "icon": "$(clear-all)"
+        },
+        {
+          "command": "what-the-code.findDeadCode",
+          "when": "view == what-the-code-dead-code",
+          "group": "navigation@1",
+          "icon": "$(search-remove)"
+        },
+        {
+          "command": "what-the-code.removeDeadCodeSafe",
+          "when": "view == what-the-code-dead-code",
+          "group": "navigation@2",
+          "icon": "$(trash)"
+        },
+        {
+          "command": "what-the-code.removeDeadCodeDryRun",
+          "when": "view == what-the-code-dead-code",
+          "group": "navigation@3",
+          "icon": "$(eye)"
+        },
+        {
+          "command": "what-the-code.removeDeadCodeInteractive",
+          "when": "view == what-the-code-dead-code",
+          "group": "navigation@4",
+          "icon": "$(edit)"
+        },
+        {
+          "command": "what-the-code.generateFileReport",
+          "when": "view == what-the-code-reports",
+          "group": "navigation@1",
+          "icon": "$(file-text)"
+        },
+        {
+          "command": "what-the-code.generateProjectReport",
+          "when": "view == what-the-code-reports",
+          "group": "navigation@2",
+          "icon": "$(graph)"
+        },
+        {
+          "command": "what-the-code.openReportsFolder",
+          "when": "view == what-the-code-reports",
+          "group": "navigation@3",
+          "icon": "$(folder-opened)"
+        },
+        {
+          "command": "what-the-code.openTeamLeaderboard",
+          "when": "view == what-the-code-reports",
+          "group": "navigation@4",
+          "icon": "$(trophy)"
+        },
+        {
+          "command": "what-the-code.openCodeVisualizer",
+          "when": "view == what-the-code-visualizer",
+          "group": "navigation@1",
+          "icon": "$(type-hierarchy)"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "what-the-code.restoreSnapshot",
+          "when": "view == what-the-code-snapshots && viewItem == snapshot",
+          "group": "inline@1",
+          "icon": "$(debug-restart)"
+        },
+        {
+          "command": "what-the-code.deleteSnapshot",
+          "when": "view == what-the-code-snapshots && viewItem == snapshot",
+          "group": "inline@2",
+          "icon": "$(trash)"
+        },
+        {
+          "command": "what-the-code.openReport",
+          "when": "view == what-the-code-reports && viewItem == report",
+          "group": "inline@1",
+          "icon": "$(go-to-file)"
+        },
+        {
+          "command": "what-the-code.deleteReport",
+          "when": "view == what-the-code-reports && viewItem == report",
+          "group": "inline@2",
+          "icon": "$(trash)"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "what-the-code.searchCode",
+        "key": "ctrl+shift+alt+k",
+        "mac": "cmd+shift+alt+k"
+      },
+      {
+        "command": "what-the-code.generateFileReport",
+        "key": "ctrl+shift+alt+r",
+        "mac": "cmd+shift+alt+r"
+      },
+      {
+        "command": "what-the-code.openTeamLeaderboard",
+        "key": "ctrl+shift+alt+l",
+        "mac": "cmd+shift+alt+l"
+      },
+      {
+        "command": "what-the-code.openCodeVisualizer",
+        "key": "ctrl+shift+alt+v",
+        "mac": "cmd+shift+alt+v"
+      }
+    ],
+    "configuration": {
+      "title": "What-The-Code",
+      "properties": {
+        "whatTheCode.geminiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Gemini API key (get from https://aistudio.google.com/app/apikey)"
+        },
+        "whatTheCode.geminiModel": {
+          "type": "string",
+          "default": "gemini-2.5-flash",
+          "description": "Gemini model to use for code analysis",
+          "enum": [
+            "gemini-2.5-flash",
+            "gemini-1.5-pro",
+            "gemini-pro"
+          ],
+          "enumDescriptions": [
+            "Fast and efficient",
+            "Most capable",
+            "Legacy model"
+          ]
+        },
+        "whatTheCode.maxFileSize": {
+          "type": "number",
+          "default": 50000,
+          "description": "Maximum file size (in characters) to include in search"
+        },
+        "whatTheCode.includedExtensions": {
+          "type": "array",
+          "default": [
+            ".js",
+            ".ts",
+            ".jsx",
+            ".tsx",
+            ".py",
+            ".java",
+            ".cs",
+            ".cpp",
+            ".c",
+            ".h",
+            ".go",
+            ".rs",
+            ".php",
+            ".rb",
+            ".vue",
+            ".svelte"
+          ],
+          "description": "File extensions to include in code search"
+        },
+        "whatTheCode.deadCodeRemoval.createBackups": {
+          "type": "boolean",
+          "default": true,
+          "description": "Create backup files before removing dead code"
+        },
+        "whatTheCode.deadCodeRemoval.confirmEachFile": {
+          "type": "boolean",
+          "default": false,
+          "description": "Ask for confirmation before processing each file during removal"
+        },
+        "whatTheCode.deadCodeRemoval.onlyHighConfidence": {
+          "type": "boolean",
+          "default": true,
+          "description": "Only remove high-confidence dead code items by default"
+        },
+        "whatTheCode.reports.openAfterGeneration": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically open HTML reports after generation"
+        },
+        "whatTheCode.reports.includeCharts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include interactive charts in project reports"
+        },
+        "whatTheCode.reports.maxFilesInProjectReport": {
+          "type": "number",
+          "default": 20,
+          "description": "Maximum number of files to analyze in project reports (for performance)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src"
+  },
+  "devDependencies": {
+    "@types/node": "20.x",
+    "@types/vscode": "^1.101.0",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
+    "eslint": "^9.25.1",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}
