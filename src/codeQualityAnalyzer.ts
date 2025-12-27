@@ -1,3 +1,29 @@
+export interface MagicNumberDetail {
+    readonly line: number;
+    readonly column: number;
+    readonly value: string;
+    readonly context: string;
+}
+
+export interface LongFunctionDetail {
+    readonly name: string;
+    readonly line: number;
+    readonly lineCount: number;
+    readonly threshold: number;
+}
+
+export interface UnusedParameterDetail {
+    readonly functionName: string;
+    readonly parameterName: string;
+    readonly line: number;
+}
+
+export interface DuplicateCodeDetail {
+    readonly line: number;
+    readonly blockSize: number;
+    readonly code: string;
+}
+
 export interface CodeQualityMetrics {
     readonly typesCoverage: number;
     readonly functionComplexity: number;
@@ -5,6 +31,11 @@ export interface CodeQualityMetrics {
     readonly unusedParameters: number;
     readonly magicNumbers: number;
     readonly longFunctions: number;
+    // Detailed information
+    readonly magicNumberDetails?: MagicNumberDetail[];
+    readonly longFunctionDetails?: LongFunctionDetail[];
+    readonly unusedParameterDetails?: UnusedParameterDetail[];
+    readonly duplicateCodeDetails?: DuplicateCodeDetail[];
 }
 
 export interface RefactoringRecommendation {
@@ -33,13 +64,22 @@ export class CodeQualityAnalyzer {
     private readonly duplicateThreshold = 5;
 
     analyzeCodeQuality(content: string, filePath: string): CodeQualityMetrics {
+        const magicNumberDetails = this.findMagicNumbersDetailed(content);
+        const longFunctionDetails = this.findLongFunctionsDetailed(content);
+        const unusedParameterDetails = this.findUnusedParametersDetailed(content);
+        const duplicateCodeDetails = this.findDuplicateBlocksDetailed(content);
+
         return {
             typesCoverage: this.calculateTypesCoverage(content),
             functionComplexity: this.calculateAverageComplexity(content),
-            duplicateCodeBlocks: this.findDuplicateBlocks(content),
-            unusedParameters: this.findUnusedParameters(content),
-            magicNumbers: this.findMagicNumbers(content),
-            longFunctions: this.findLongFunctions(content)
+            duplicateCodeBlocks: duplicateCodeDetails.length,
+            unusedParameters: unusedParameterDetails.length,
+            magicNumbers: magicNumberDetails.length,
+            longFunctions: longFunctionDetails.length,
+            magicNumberDetails,
+            longFunctionDetails,
+            unusedParameterDetails,
+            duplicateCodeDetails
         };
     }
 
@@ -140,12 +180,16 @@ export class CodeQualityAnalyzer {
     }
 
     private calculateAverageComplexity(content: string): number {
-        const functions = content.match(/function\s+\w+[^{]*\{[^}]*\}/g) || [];
-        const totalComplexity = functions.reduce((sum, func) => {
+        const matches = content.match(/function\s+\w+[^{]*\{[^}]*\}/g);
+        if (!matches || matches.length === 0) {
+            return 0;
+        }
+        
+        const totalComplexity = matches.reduce((sum: number, func: string) => {
             return sum + this.calculateFunctionComplexity(func);
         }, 0);
         
-        return functions.length > 0 ? totalComplexity / functions.length : 0;
+        return totalComplexity / matches.length;
     }
 
     private calculateFunctionComplexity(func: string): number {
@@ -242,6 +286,129 @@ export class CodeQualityAnalyzer {
             const context = content.substring(content.indexOf(num) - 10, content.indexOf(num) + 10);
             return !context.includes('array') && !context.includes('length') && !context.includes('index');
         }).length;
+    }
+
+    private findMagicNumbersDetailed(content: string): MagicNumberDetail[] {
+        const details: MagicNumberDetail[] = [];
+        const lines = content.split('\n');
+        const magicNumberRegex = /\b(?!0|1|100)\d+\b/g;
+
+        lines.forEach((line, index) => {
+            let match;
+            const regex = new RegExp(magicNumberRegex);
+            while ((match = regex.exec(line)) !== null) {
+                const value = match[0];
+                const context = line.trim();
+                
+                // Filter out common non-magic numbers
+                if (!context.includes('array') && 
+                    !context.includes('length') && 
+                    !context.includes('index') &&
+                    !context.startsWith('//') &&
+                    !context.startsWith('*')) {
+                    details.push({
+                        line: index + 1,
+                        column: match.index + 1,
+                        value: value,
+                        context: context.length > 80 ? context.substring(0, 80) + '...' : context
+                    });
+                }
+            }
+        });
+
+        return details;
+    }
+
+    private findLongFunctionsDetailed(content: string): LongFunctionDetail[] {
+        const details: LongFunctionDetail[] = [];
+        const functionRegex = /function\s+(\w+)[^{]*\{/g;
+        const lines = content.split('\n');
+        let match;
+
+        while ((match = functionRegex.exec(content)) !== null) {
+            const funcName = match[1];
+            const funcStart = match.index;
+            const funcEnd = this.findMatchingBrace(content, funcStart + match[0].length - 1);
+            
+            if (funcEnd !== -1) {
+                const funcContent = content.substring(funcStart, funcEnd);
+                const funcLines = funcContent.split('\n').length;
+                
+                if (funcLines > this.functionLengthThreshold) {
+                    // Find line number
+                    const beforeFunc = content.substring(0, funcStart);
+                    const lineNumber = beforeFunc.split('\n').length;
+                    
+                    details.push({
+                        name: funcName,
+                        line: lineNumber,
+                        lineCount: funcLines,
+                        threshold: this.functionLengthThreshold
+                    });
+                }
+            }
+        }
+
+        return details;
+    }
+
+    private findUnusedParametersDetailed(content: string): UnusedParameterDetail[] {
+        const details: UnusedParameterDetail[] = [];
+        const functionRegex = /function\s+(\w+)\s*\(([^)]*)\)/g;
+        let match;
+
+        while ((match = functionRegex.exec(content)) !== null) {
+            const funcName = match[1];
+            const params = match[2];
+            const funcStart = match.index;
+            
+            if (funcStart !== undefined && params.trim()) {
+                const paramList = params.split(',').map(p => {
+                    const paramName = p.trim().split(':')[0].trim().split('=')[0].trim();
+                    return paramName;
+                });
+                
+                const funcBody = this.extractFunctionBody(content, match[0]);
+                const beforeFunc = content.substring(0, funcStart);
+                const lineNumber = beforeFunc.split('\n').length;
+                
+                paramList.forEach(param => {
+                    if (param && param !== '...' && !new RegExp(`\\b${param}\\b`).test(funcBody)) {
+                        details.push({
+                            functionName: funcName,
+                            parameterName: param,
+                            line: lineNumber
+                        });
+                    }
+                });
+            }
+        }
+
+        return details;
+    }
+
+    private findDuplicateBlocksDetailed(content: string): DuplicateCodeDetail[] {
+        const details: DuplicateCodeDetail[] = [];
+        const lines = content.split('\n');
+        const seenBlocks = new Map<string, number>();
+
+        for (let i = 0; i < lines.length - this.duplicateThreshold; i++) {
+            const block = lines.slice(i, i + this.duplicateThreshold).join('\n').trim();
+            if (block && !this.isCommentBlock(block)) {
+                if (seenBlocks.has(block)) {
+                    const displayCode = block.length > 100 ? block.substring(0, 100) + '...' : block;
+                    details.push({
+                        line: i + 1,
+                        blockSize: this.duplicateThreshold,
+                        code: displayCode
+                    });
+                } else {
+                    seenBlocks.set(block, i);
+                }
+            }
+        }
+
+        return details;
     }
 
     private findLongFunctions(content: string): number {

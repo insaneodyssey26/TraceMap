@@ -274,24 +274,120 @@ export class HTMLReportGenerator {
                     <div class="metric-value">${metrics.functionComplexity.toFixed(1)}</div>
                     <div class="complexity-indicator ${this.getComplexityClass(metrics.functionComplexity)}"></div>
                 </div>
-                <div class="metric-card">
-                    <h4>Duplicate Blocks</h4>
+                <div class="metric-card clickable" onclick="toggleDetails('duplicates')">
+                    <h4>Duplicate Blocks 🔍</h4>
                     <div class="metric-value">${metrics.duplicateCodeBlocks}</div>
+                    ${metrics.duplicateCodeBlocks > 0 ? '<div class="click-hint">Click for details</div>' : ''}
                 </div>
-                <div class="metric-card">
-                    <h4>Magic Numbers</h4>
+                <div class="metric-card clickable" onclick="toggleDetails('magic-numbers')">
+                    <h4>Magic Numbers 🔍</h4>
                     <div class="metric-value">${metrics.magicNumbers}</div>
+                    ${metrics.magicNumbers > 0 ? '<div class="click-hint">Click for details</div>' : ''}
                 </div>
-                <div class="metric-card">
-                    <h4>Long Functions</h4>
+                <div class="metric-card clickable" onclick="toggleDetails('long-functions')">
+                    <h4>Long Functions 🔍</h4>
                     <div class="metric-value">${metrics.longFunctions}</div>
+                    ${metrics.longFunctions > 0 ? '<div class="click-hint">Click for details</div>' : ''}
                 </div>
-                <div class="metric-card">
-                    <h4>Unused Parameters</h4>
+                <div class="metric-card clickable" onclick="toggleDetails('unused-params')">
+                    <h4>Unused Parameters 🔍</h4>
                     <div class="metric-value">${metrics.unusedParameters}</div>
+                    ${metrics.unusedParameters > 0 ? '<div class="click-hint">Click for details</div>' : ''}
                 </div>
             </div>
+
+            ${this.generateMetricDetailsSection(metrics)}
         </section>`;
+    }
+
+    private generateMetricDetailsSection(metrics: CodeQualityMetrics): string {
+        return `
+            <!-- Magic Numbers Details -->
+            <div id="magic-numbers-details" class="metric-details" style="display: none;">
+                <h3>🔢 Magic Numbers Found</h3>
+                ${metrics.magicNumberDetails && metrics.magicNumberDetails.length > 0 ? `
+                    <div class="details-list">
+                        ${metrics.magicNumberDetails.map((detail, idx) => `
+                            <div class="detail-item">
+                                <div class="detail-header">
+                                    <span class="detail-number">${idx + 1}</span>
+                                    <span class="detail-value">Value: <code>${detail.value}</code></span>
+                                    <span class="detail-location">Line ${detail.line}:${detail.column}</span>
+                                </div>
+                                <div class="detail-context"><code>${this.escapeHtml(detail.context)}</code></div>
+                                <div class="detail-suggestion">💡 Consider using a named constant for better readability</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : '<p class="no-issues">No magic numbers detected</p>'}
+            </div>
+
+            <!-- Long Functions Details -->
+            <div id="long-functions-details" class="metric-details" style="display: none;">
+                <h3>📏 Long Functions Found</h3>
+                ${metrics.longFunctionDetails && metrics.longFunctionDetails.length > 0 ? `
+                    <div class="details-list">
+                        ${metrics.longFunctionDetails.map((detail, idx) => `
+                            <div class="detail-item">
+                                <div class="detail-header">
+                                    <span class="detail-number">${idx + 1}</span>
+                                    <span class="detail-value">Function: <code>${detail.name}</code></span>
+                                    <span class="detail-location">Line ${detail.line}</span>
+                                </div>
+                                <div class="detail-stats">
+                                    <span class="stat">Lines: <strong>${detail.lineCount}</strong></span>
+                                    <span class="stat">Threshold: ${detail.threshold}</span>
+                                    <span class="stat-warning">${detail.lineCount - detail.threshold} lines over</span>
+                                </div>
+                                <div class="detail-suggestion">💡 Consider breaking this function into smaller, more focused functions</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : '<p class="no-issues">No long functions detected</p>'}
+            </div>
+
+            <!-- Unused Parameters Details -->
+            <div id="unused-params-details" class="metric-details" style="display: none;">
+                <h3>🚫 Unused Parameters Found</h3>
+                ${metrics.unusedParameterDetails && metrics.unusedParameterDetails.length > 0 ? `
+                    <div class="details-list">
+                        ${metrics.unusedParameterDetails.map((detail, idx) => `
+                            <div class="detail-item">
+                                <div class="detail-header">
+                                    <span class="detail-number">${idx + 1}</span>
+                                    <span class="detail-value">Function: <code>${detail.functionName}</code></span>
+                                    <span class="detail-location">Line ${detail.line}</span>
+                                </div>
+                                <div class="detail-context">
+                                    Parameter: <code>${detail.parameterName}</code> is declared but never used
+                                </div>
+                                <div class="detail-suggestion">💡 Remove the unused parameter or prefix with underscore (_${detail.parameterName}) if intentionally unused</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : '<p class="no-issues">No unused parameters detected</p>'}
+            </div>
+
+            <!-- Duplicate Code Details -->
+            <div id="duplicates-details" class="metric-details" style="display: none;">
+                <h3>📋 Duplicate Code Blocks Found</h3>
+                ${metrics.duplicateCodeDetails && metrics.duplicateCodeDetails.length > 0 ? `
+                    <div class="details-list">
+                        ${metrics.duplicateCodeDetails.map((detail, idx) => `
+                            <div class="detail-item">
+                                <div class="detail-header">
+                                    <span class="detail-number">${idx + 1}</span>
+                                    <span class="detail-value">Block Size: ${detail.blockSize} lines</span>
+                                    <span class="detail-location">Line ${detail.line}</span>
+                                </div>
+                                <div class="detail-context"><pre><code>${this.escapeHtml(detail.code)}</code></pre></div>
+                                <div class="detail-suggestion">💡 Consider extracting this code into a reusable function</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : '<p class="no-issues">No duplicate code blocks detected</p>'}
+            </div>
+        `;
     }
 
     private generateTypeSafetySection(issues: TypeSafetyIssue[]): string {
@@ -619,6 +715,25 @@ export class HTMLReportGenerator {
                 padding: 20px;
                 border-radius: 6px;
                 border-left: 4px solid #007acc;
+                transition: all 0.3s ease;
+            }
+
+            .metric-card.clickable {
+                cursor: pointer;
+                position: relative;
+            }
+
+            .metric-card.clickable:hover {
+                background: #e8f4f8;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 122, 204, 0.2);
+            }
+
+            .click-hint {
+                font-size: 0.75rem;
+                color: #007acc;
+                margin-top: 8px;
+                font-style: italic;
             }
             
             .metric-card h4 {
@@ -631,6 +746,144 @@ export class HTMLReportGenerator {
                 font-weight: bold;
                 color: #333;
                 margin-bottom: 10px;
+            }
+
+            .metric-details {
+                margin-top: 30px;
+                padding: 25px;
+                background: #f0f7ff;
+                border-radius: 8px;
+                border-left: 4px solid #007acc;
+                animation: slideDown 0.3s ease-out;
+            }
+
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .metric-details h3 {
+                color: #007acc;
+                margin-bottom: 20px;
+                font-size: 1.3rem;
+            }
+
+            .details-list {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .detail-item {
+                background: white;
+                padding: 15px;
+                border-radius: 6px;
+                border: 1px solid #e0e0e0;
+                transition: box-shadow 0.2s ease;
+            }
+
+            .detail-item:hover {
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+
+            .detail-header {
+                display: flex;
+                gap: 15px;
+                align-items: center;
+                margin-bottom: 10px;
+                flex-wrap: wrap;
+            }
+
+            .detail-number {
+                background: #007acc;
+                color: white;
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                font-size: 0.9rem;
+            }
+
+            .detail-value {
+                font-weight: 600;
+                color: #333;
+            }
+
+            .detail-value code {
+                background: #ffe5b4;
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-family: 'Consolas', 'Monaco', monospace;
+                color: #c7254e;
+            }
+
+            .detail-location {
+                color: #666;
+                font-size: 0.9rem;
+                margin-left: auto;
+            }
+
+            .detail-context {
+                background: #f8f9fa;
+                padding: 10px;
+                border-radius: 4px;
+                font-family: 'Consolas', 'Monaco', monospace;
+                font-size: 0.9rem;
+                color: #333;
+                margin: 10px 0;
+                overflow-x: auto;
+            }
+
+            .detail-context code {
+                color: #333;
+            }
+
+            .detail-stats {
+                display: flex;
+                gap: 15px;
+                margin: 10px 0;
+                flex-wrap: wrap;
+            }
+
+            .stat {
+                background: #e3f2fd;
+                padding: 6px 12px;
+                border-radius: 4px;
+                font-size: 0.9rem;
+                color: #1976d2;
+            }
+
+            .stat strong {
+                font-weight: bold;
+                color: #0d47a1;
+            }
+
+            .stat-warning {
+                background: #fff3e0;
+                padding: 6px 12px;
+                border-radius: 4px;
+                font-size: 0.9rem;
+                color: #e65100;
+                font-weight: 600;
+            }
+
+            .detail-suggestion {
+                color: #558b2f;
+                font-style: italic;
+                margin-top: 10px;
+                padding: 8px;
+                background: #f1f8e9;
+                border-radius: 4px;
+                font-size: 0.9rem;
             }
             
             .metric-bar {
@@ -820,6 +1073,25 @@ export class HTMLReportGenerator {
     private getPDFScript(): string {
         return `
         <script>
+            // Toggle metric details function
+            function toggleDetails(detailId) {
+                const detailsElement = document.getElementById(detailId + '-details');
+                if (detailsElement) {
+                    if (detailsElement.style.display === 'none') {
+                        // Hide all other details first
+                        document.querySelectorAll('.metric-details').forEach(el => {
+                            el.style.display = 'none';
+                        });
+                        // Show the clicked one
+                        detailsElement.style.display = 'block';
+                        detailsElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    } else {
+                        detailsElement.style.display = 'none';
+                    }
+                }
+            }
+
+            // PDF generation
             document.getElementById('generatePDF').addEventListener('click', function() {
                 // Hide PDF button before generating
                 const pdfSection = document.querySelector('.pdf-section');
