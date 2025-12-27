@@ -1,38 +1,108 @@
 # What-The-Code 🚀
 
-Welcome to **What-The-Code** – your AI-powered, code quality-obsessed VS Code extension.  
-Now with advanced code quality analysis, performance monitoring, and a one-click status bar for instant insights!
+**Your Privacy-First Code Quality Assistant** – AI-powered when you need it, 100% local when you don't.
+
+---
+
+## 🔒 Privacy Mode: Your Data, Your Machine
+
+**Enterprise-Ready Privacy:** Most features run **entirely offline** on your machine. No data leaves your computer.
+
+- ✅ **Dead Code Analysis** – 100% local static analysis
+- ✅ **Code Quality Reports** – All metrics computed locally  
+- ✅ **Type Safety Checks** – Offline pattern matching
+- ✅ **Refactoring Suggestions** – Local complexity analysis
+- ✅ **Performance Monitoring** – Everything stays on your machine
+- ⭐ **AI Code Search** – *Optional* (requires Gemini API, can be disabled)
+
+**Enable Privacy Mode** in settings to disable all AI features. Perfect for:
+- Proprietary codebases
+- Sensitive projects
+- Offline environments
+- Security-conscious teams
 
 ---
 
 ## What does it do?
 
-- **Ask your code anything!** (plain English, no jargon required)
-- **Find and zap dead code** (unused stuff hiding in your files)
-- **Analyze code quality** (type safety, complexity, duplicates, and more)
-- **Performance monitoring** (see how fast and efficient your analysis is)
+- **🔒 Privacy Mode** – Disable AI, run 100% locally (your USP!)
+- **Ask your code anything!** (optional AI feature with Gemini)
+- **Find and zap dead code** (works offline)
+- **Analyze code quality** (type safety, complexity, duplicates – all local)
+- **Performance monitoring** (offline analysis tracking)
 - **Save file snapshots** before you break things (and restore them when you do)
+- **Interactive quality reports** with clickable metrics
 
 ---
 
 ## How to Get Started
 
+### Quick Start (Privacy Mode - No API Key Needed)
+
 1. **Install** from the VS Code Marketplace
-2. **Get a Gemini API key** from [Google AI Studio](https://aistudio.google.com/app/apikey)
-3. **Enter your API key** in VS Code settings (search for "What-The-Code")
-4. **Press** `Ctrl+Shift+Alt+K` to chat with your code, or use the sidebar for more features
-5. **Click the “Code Quality” button** in the status bar to analyze the current file
+2. **Enable Privacy Mode** (optional) in settings: `whatTheCode.privacyMode`
+3. **Use all features** except AI search – everything runs locally!
+4. **Click** the status bar button to analyze your current file
+
+### With AI Features (Optional)
+
+1. **Get a Gemini API key** from [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. **Enter your API key** in VS Code settings (search for "What-The-Code")
+3. **Press** `Ctrl+Shift+Alt+K` to use AI-powered code search
+4. **Toggle Privacy Mode** anytime with the command palette
 
 ---
 
-## Why you’ll love it
+## Key Features
 
-- **Talk to your codebase** like it’s your buddy
-- **Clean up dead code** (unused imports, functions, and more) with a click
-- **Analyze code quality** (type coverage, refactoring suggestions)
-- **Performance insights** (see analysis speed, memory usage, and more)
-- **Automatic backups** and **restore from snapshots**
-- **Works with many languages** (especially JavaScript/TypeScript)
+### 🔒 Privacy-First Design
+- **Privacy Mode Toggle** – One click to disable all external API calls
+- **Visual Indicator** – Status bar shows when Privacy Mode is active
+- **No Silent Data Transfer** – You control what leaves your machine
+- **Enterprise-Ready** – Perfect for confidential codebases
+
+### 📊 Code Quality Analysis (100% Local)
+- **Interactive Reports** – Click metrics to see detailed issues
+- **Type Coverage** – See exactly which variables need types
+- **Magic Numbers** – Find all hardcoded numbers with context
+- **Long Functions** – Identify functions that need refactoring
+- **Duplicate Code** – Spot repeated code blocks
+- **Complexity Metrics** – Cyclomatic complexity per function
+
+### 🧹 Dead Code Detection (100% Local)
+- Find unused functions, variables, imports, components
+- Multiple removal modes: Safe, Interactive, Dry Run
+- Automatic backups before changes
+- Confidence levels for each finding
+
+### 📸 Code Snapshots (100% Local)
+- Save file states before risky changes
+- One-click restore
+- Timestamped history
+
+---
+
+## Why Choose What-The-Code?
+
+🔐 **Privacy First** – Your competitive advantage  
+- Core features work 100% offline
+- Optional AI, not required AI
+- Perfect for proprietary/sensitive code
+
+⚡ **Fast & Efficient**  
+- Static analysis (no runtime overhead)
+- Parallel file processing
+- Performance monitoring built-in
+
+🎯 **Actionable Insights**  
+- Click any metric to see details
+- Specific line numbers and code context
+- Clear refactoring suggestions
+
+🛡️ **Safe by Design**  
+- Automatic backups before changes
+- Dry-run mode for previews
+- Confidence levels on findings
 
 ---
 
@@ -71,6 +141,19 @@ Now with advanced code quality analysis, performance monitoring, and a one-click
 
 ## FAQ
 
+**Why is Privacy Mode important?**  
+Many companies don't allow sending proprietary code to external APIs. Privacy Mode ensures all analysis runs locally – no data leaves your machine.
+
+**What exactly uses AI vs local analysis?**  
+- **Local (works in Privacy Mode):** Dead code detection, quality metrics, type safety checks, complexity analysis, refactoring suggestions
+- **Uses AI (disabled in Privacy Mode):** Natural language code search ("Ask Your Code")
+
+**How do I enable Privacy Mode?**  
+Open settings (Ctrl+,), search "What-The-Code", toggle "Privacy Mode". Or use Command Palette → "Toggle Privacy Mode"
+
+**Can I see Privacy Mode status?**  
+Yes! The status bar shows a shield icon (🔒) when Privacy Mode is active.
+
 **What is dead code?**  
 Code that is never used or run, like old functions or imports you forgot to delete.
 
@@ -80,14 +163,8 @@ Good code is easier to read, fix, and build on. It helps you and your team avoid
 **What is a code snapshot?**  
 A backup of your file before changes, so you can restore it if needed.
 
-**Is my code sent to the cloud or kept private?**  
-Your code is analyzed locally. Only your questions (and the code you ask about) are sent to Gemini if you use AI features.
-
-**Do I need to know AI or machine learning to use this extension?**  
-No! Just install, set your API key, and use the buttons or commands.
-
-**Can I use this extension offline?**  
-Most features work offline, but AI-powered answers need an internet connection.
+**Do I need to know AI or machine learning?**  
+No! Most features work without any AI. The AI search is optional.
 
 **Will it change my code automatically?**  
 No, it only suggests changes. You decide what to apply. Snapshots are saved before any edits.

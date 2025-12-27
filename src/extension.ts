@@ -17,6 +17,27 @@ import { ProjectFileCollector } from './getProjectFiles';
 import { CodeVisualizerProvider } from './codeVisualizer';
 import { VisualizerActionsProvider } from './visualizerActionsProvider';
 
+function updateStatusBar(statusBarItem: vscode.StatusBarItem) {
+	const config = vscode.workspace.getConfiguration('whatTheCode');
+	const privacyMode = config.get<boolean>('privacyMode', false);
+	
+	if (privacyMode) {
+		statusBarItem.text = '$(shield) Code Quality (Private)';
+		statusBarItem.tooltip = 'Privacy Mode: All analysis runs locally. Click to analyze current file.';
+		statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+	} else {
+		statusBarItem.text = '$(pulse) Code Quality';
+		statusBarItem.tooltip = 'Click to analyze current file quality';
+		statusBarItem.backgroundColor = undefined;
+	}
+}
+
+function isPrivacyModeEnabled(): boolean {
+	const config = vscode.workspace.getConfiguration('whatTheCode');
+	return config.get<boolean>('privacyMode', false);
+}
+
+
 async function displayResults(query: string, results: SearchResult[], resultsProvider: SearchResultsProvider) {
 	resultsProvider.updateResults(query, results);
 	const items = results.map((result, index) => ({
@@ -196,6 +217,23 @@ async function showWelcomeMessage(context: vscode.ExtensionContext) {
 
 export function activate(context: vscode.ExtensionContext) {
 	   console.log('🚀 What-The-Code extension is now activating!');
+	   
+	   // Create Status Bar Item
+	   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+	   statusBarItem.command = 'what-the-code.analyzeCurrentFile';
+	   updateStatusBar(statusBarItem);
+	   statusBarItem.show();
+	   context.subscriptions.push(statusBarItem);
+	   
+	   // Watch for privacy mode changes
+	   context.subscriptions.push(
+		   vscode.workspace.onDidChangeConfiguration(e => {
+			   if (e.affectsConfiguration('whatTheCode.privacyMode')) {
+				   updateStatusBar(statusBarItem);
+			   }
+		   })
+	   );
+	   
 	   const isFirstTime = !context.globalState.get('whatTheCode.hasShownWelcome', false);
 	   if (isFirstTime) {
 			   console.log('First time activation - showing welcome');
@@ -243,6 +281,26 @@ export function activate(context: vscode.ExtensionContext) {
 	   const deadCodeRemover = new DeadCodeRemover();
 	   const searchCommand = vscode.commands.registerCommand('what-the-code.searchCode', async () => {
 			   console.log('🔍 Search command triggered!');
+			   
+			   // Check privacy mode
+			   if (isPrivacyModeEnabled()) {
+				   const choice = await vscode.window.showWarningMessage(
+					   '🔒 Privacy Mode is enabled. The "Ask Your Code" feature requires AI (Gemini) and is disabled in Privacy Mode.\n\nAll other features (Dead Code Analysis, Quality Reports) work offline.',
+					   'Disable Privacy Mode',
+					   'Keep Privacy Mode',
+					   'Learn More'
+				   );
+				   
+				   if (choice === 'Disable Privacy Mode') {
+					   await vscode.workspace.getConfiguration('whatTheCode').update('privacyMode', false, vscode.ConfigurationTarget.Global);
+					   vscode.window.showInformationMessage('Privacy Mode disabled. AI features are now available.');
+					   return;
+				   } else if (choice === 'Learn More') {
+					   vscode.env.openExternal(vscode.Uri.parse('https://github.com/insaneodyssey26/what-the-code#privacy-mode'));
+				   }
+				   return;
+			   }
+			   
 			   try {
 					   console.log('Opening search dialog...');
 					   const query = await vscode.window.showInputBox({
@@ -655,6 +713,124 @@ export function activate(context: vscode.ExtensionContext) {
        }
    });
    
+   // Toggle Privacy Mode Command
+   const togglePrivacyModeCommand = vscode.commands.registerCommand('what-the-code.togglePrivacyMode', async () => {
+       const config = vscode.workspace.getConfiguration('whatTheCode');
+       const currentMode = config.get<boolean>('privacyMode', false);
+       
+       await config.update('privacyMode', !currentMode, vscode.ConfigurationTarget.Global);
+       
+       const newMode = !currentMode;
+       if (newMode) {
+           vscode.window.showInformationMessage(
+               '🔒 Privacy Mode Enabled: All AI features are disabled. Analysis runs 100% locally.',
+               'Learn More'
+           ).then(choice => {
+               if (choice === 'Learn More') {
+                   vscode.env.openExternal(vscode.Uri.parse('https://github.com/insaneodyssey26/what-the-code#privacy-mode'));
+               }
+           });
+       } else {
+           vscode.window.showInformationMessage('✨ Privacy Mode Disabled: AI features are now available.');
+       }
+   });
+   
+   // Analyze Current File Command (for status bar)
+   const analyzeCurrentFileCommand = vscode.commands.registerCommand('what-the-code.analyzeCurrentFile', async () => {
+       const editor = vscode.window.activeTextEditor;
+       if (!editor) {
+           vscode.window.showWarningMessage('No active editor. Open a file to analyze its code quality.');
+           return;
+       }
+       
+       await vscode.window.withProgress({
+           location: vscode.ProgressLocation.Notification,
+           title: 'Analyzing code quality...',
+           cancellable: false
+       }, async (progress) => {
+           try {
+               progress.report({ increment: 25, message: 'Analyzing metrics...' });
+               
+               const document = editor.document;
+               const content = document.getText();
+               const filePath = document.fileName;
+               
+               const analyzer = new CodeQualityAnalyzer();
+               const metrics = analyzer.analyzeCodeQuality(content, filePath);
+               const typeSafetyIssues = analyzer.findTypeSafetyIssues(content, filePath);
+               const refactoringRecommendations = analyzer.generateRefactoringRecommendations(content, filePath);
+               
+               progress.report({ increment: 50, message: 'Checking for dead code...' });
+               
+               const deadCodeAnalyzer = new DeadCodeAnalyzer();
+               const deadCodeIssues = await deadCodeAnalyzer.analyzeFile(filePath, vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '');
+               
+               progress.report({ increment: 75, message: 'Complete!' });
+               
+               const totalIssues = typeSafetyIssues.length + refactoringRecommendations.length + deadCodeIssues.length;
+               const qualityScore = calculateQuickScore(metrics, totalIssues);
+               
+               const choice = await vscode.window.showInformationMessage(
+                   `📊 Quality Score: ${qualityScore}/100 | Issues: ${totalIssues} | Type Coverage: ${metrics.typesCoverage.toFixed(0)}%`,
+                   'Generate Full Report',
+                   'View Issues',
+                   'Dismiss'
+               );
+               
+               if (choice === 'Generate Full Report') {
+                   vscode.commands.executeCommand('what-the-code.generateFileReport');
+               } else if (choice === 'View Issues') {
+                   showQuickIssuesSummary(typeSafetyIssues, refactoringRecommendations, deadCodeIssues);
+               }
+               
+           } catch (error) {
+               vscode.window.showErrorMessage(`Failed to analyze file: ${error}`);
+           }
+       });
+   });
+   
+   function calculateQuickScore(metrics: any, issuesCount: number): number {
+       let score = 100;
+       score -= issuesCount * 2;
+       score -= (10 - metrics.functionComplexity) * 2;
+       score += metrics.typesCoverage * 0.2;
+       return Math.max(0, Math.min(100, Math.round(score)));
+   }
+   
+   function showQuickIssuesSummary(typeSafety: any[], refactoring: any[], deadCode: any[]) {
+       const items = [];
+       
+       if (typeSafety.length > 0) {
+           items.push({
+               label: `$(warning) ${typeSafety.length} Type Safety Issues`,
+               description: 'Click to see details'
+           });
+       }
+       
+       if (refactoring.length > 0) {
+           items.push({
+               label: `$(tools) ${refactoring.length} Refactoring Opportunities`,
+               description: 'Click to see details'
+           });
+       }
+       
+       if (deadCode.length > 0) {
+           items.push({
+               label: `$(trash) ${deadCode.length} Dead Code Items`,
+               description: 'Click to see details'
+           });
+       }
+       
+       if (items.length === 0) {
+           vscode.window.showInformationMessage('✅ No issues found! Your code looks great.');
+           return;
+       }
+       
+       vscode.window.showQuickPick(items, {
+           title: 'Code Quality Issues Summary'
+       });
+   }
+   
    // Code Visualizer
    const codeVisualizerProvider = new CodeVisualizerProvider(context);
    const openCodeVisualizerCommand = vscode.commands.registerCommand('what-the-code.openCodeVisualizer', async () => {
@@ -665,12 +841,15 @@ export function activate(context: vscode.ExtensionContext) {
        }
    });
    
-	   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-	   statusBarItem.text = '$(search) Ask Code';
-	   statusBarItem.command = 'what-the-code.searchCode';
-	   statusBarItem.tooltip = 'Search your code with AI (Ctrl+Shift+Alt+K)';
-	   statusBarItem.show();
-	const codeQualityStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99);
+   // Secondary status bar for search (optional)
+   const searchStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99);
+   searchStatusBarItem.text = '$(search) Ask Code';
+   searchStatusBarItem.command = 'what-the-code.searchCode';
+   searchStatusBarItem.tooltip = 'Search your code with AI (Ctrl+Shift+Alt+K)';
+   searchStatusBarItem.show();
+   context.subscriptions.push(searchStatusBarItem);
+   
+   const codeQualityStatusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 98);
 	codeQualityStatusBar.text = '$(checklist) Code Quality';
 	codeQualityStatusBar.command = 'what-the-code.analyzeCodeQuality';
 	codeQualityStatusBar.tooltip = 'Analyze code quality of the current file';
@@ -716,6 +895,8 @@ export function activate(context: vscode.ExtensionContext) {
 			   deleteReportCommand,
 			   openReportsFolderCommand,
 			   openTeamLeaderboardCommand,
+			   togglePrivacyModeCommand,
+			   analyzeCurrentFileCommand,
 			   htmlReportGenerator,
 			   reportsProvider,
 			   openCodeVisualizerCommand,

@@ -2,7 +2,7 @@
   "name": "what-the-code",
   "displayName": "What-The-Code",
   "icon": "media/logo.png",
-  "description": "AI-powered code search, dead code analysis, and file snapshots. Ask questions about your codebase, find unused code, and create checkpoints.",
+  "description": "🔒 Privacy-first code quality analyzer. Dead code detection, quality metrics, and refactoring suggestions – all running locally. Optional AI search when you need it.",
   "version": "1.1.20",
   "publisher": "saheli56",
   "author": {
@@ -168,6 +168,18 @@
         "title": "🏆 Open Team Leaderboard",
         "category": "What-The-Code",
         "icon": "$(trophy)"
+      },
+      {
+        "command": "what-the-code.togglePrivacyMode",
+        "title": "🔒 Toggle Privacy Mode",
+        "category": "What-The-Code",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "what-the-code.analyzeCurrentFile",
+        "title": "📊 Analyze Current File Quality",
+        "category": "What-The-Code",
+        "icon": "$(pulse)"
       },
       {
         "command": "what-the-code.openCodeVisualizer",
@@ -376,15 +388,22 @@
     "configuration": {
       "title": "What-The-Code",
       "properties": {
+        "whatTheCode.privacyMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "🔒 Privacy Mode: Disable all AI features (Gemini API calls). All analysis runs locally.",
+          "order": 0
+        },
         "whatTheCode.geminiApiKey": {
           "type": "string",
           "default": "",
-          "description": "Gemini API key (get from https://aistudio.google.com/app/apikey)"
+          "description": "Gemini API key (get from https://aistudio.google.com/app/apikey). Not used in Privacy Mode.",
+          "order": 1
         },
         "whatTheCode.geminiModel": {
           "type": "string",
           "default": "gemini-2.5-flash",
-          "description": "Gemini model to use for code analysis",
+          "description": "Gemini model to use for code analysis. Not used in Privacy Mode.",
           "enum": [
             "gemini-2.5-flash",
             "gemini-1.5-pro",
@@ -394,7 +413,8 @@
             "Fast and efficient",
             "Most capable",
             "Legacy model"
-          ]
+          ],
+          "order": 2
         },
         "whatTheCode.maxFileSize": {
           "type": "number",
