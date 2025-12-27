@@ -228,6 +228,12 @@
         "title": "Clear Complexity Results",
         "category": "What-The-Code",
         "icon": "$(clear-all)"
+      },
+      {
+        "command": "what-the-code.generateProjectDashboard",
+        "title": "🚀 Generate Project Dashboard",
+        "category": "What-The-Code",
+        "icon": "$(dashboard)"
       }
     ],
     "viewsContainers": {
@@ -324,6 +330,12 @@
           "icon": "$(graph-line)"
         },
         {
+          "command": "what-the-code.generateProjectDashboard",
+          "when": "view == what-the-code-main-actions",
+          "group": "navigation@6",
+          "icon": "$(dashboard)"
+        },
+        {
           "command": "what-the-code.clearResults",
           "when": "view == what-the-code-results",
           "group": "navigation",
@@ -394,6 +406,12 @@
           "when": "view == what-the-code-reports",
           "group": "navigation@5",
           "icon": "$(graph-line)"
+        },
+        {
+          "command": "what-the-code.generateProjectDashboard",
+          "when": "view == what-the-code-reports",
+          "group": "navigation@6",
+          "icon": "$(dashboard)"
         },
         {
           "command": "what-the-code.openCodeVisualizer",
@@ -501,6 +519,11 @@
         "command": "what-the-code.generateComplexityHeatmap",
         "key": "ctrl+shift+alt+c",
         "mac": "cmd+shift+alt+c"
+      },
+      {
+        "command": "what-the-code.generateProjectDashboard",
+        "key": "ctrl+shift+alt+d",
+        "mac": "cmd+shift+alt+d"
       }
     ],
     "configuration": {

@@ -23,6 +23,7 @@ import { SecurityReportGenerator } from './securityReportGenerator';
 import { ComplexityAnalyzer } from './complexityAnalyzer';
 import { ComplexityHeatmapGenerator } from './complexityHeatmapGenerator';
 import { ComplexityActionsProvider } from './complexityActionsProvider';
+import { ProjectDashboardGenerator } from './projectDashboard';
 
 function updateStatusBar(statusBarItem: vscode.StatusBarItem) {
 	const config = vscode.workspace.getConfiguration('whatTheCode');
@@ -1121,6 +1122,71 @@ export function activate(context: vscode.ExtensionContext) {
 		   });
 	   });
 	   
+	   // Project Dashboard Command
+	   const projectDashboard = new ProjectDashboardGenerator();
+	   
+	   const generateProjectDashboardCommand = vscode.commands.registerCommand('what-the-code.generateProjectDashboard', async () => {
+		   await vscode.window.withProgress({
+			   location: vscode.ProgressLocation.Notification,
+			   title: 'Generating project dashboard...',
+			   cancellable: true
+		   }, async (progress, token) => {
+			   try {
+				   progress.report({ increment: 10, message: 'Running security scan...' });
+				   
+				   // Get latest security data if available
+				   let securityData = undefined;
+				   try {
+					   securityData = await securityScanner.scanWorkspace();
+				   } catch (err) {
+					   console.log('Security scan skipped:', err);
+				   }
+				   
+				   if (token.isCancellationRequested) {
+					   return;
+				   }
+				   
+				   progress.report({ increment: 40, message: 'Analyzing complexity...' });
+				   
+				   // Get latest complexity data if available
+				   let complexityData = undefined;
+				   try {
+					   complexityData = await complexityAnalyzer.analyzeWorkspace();
+				   } catch (err) {
+					   console.log('Complexity analysis skipped:', err);
+				   }
+				   
+				   if (token.isCancellationRequested) {
+					   return;
+				   }
+				   
+				   progress.report({ increment: 80, message: 'Creating dashboard...' });
+				   
+				   const reportPath = await projectDashboard.generateDashboard(securityData, complexityData);
+				   
+				   progress.report({ increment: 100, message: 'Complete!' });
+				   
+				   const choice = await vscode.window.showInformationMessage(
+					   `🚀 Project dashboard generated!`,
+					   'Open Dashboard',
+					   'Open Reports Folder'
+				   );
+				   
+				   if (choice === 'Open Dashboard') {
+					   await projectDashboard.openDashboard(reportPath);
+				   } else if (choice === 'Open Reports Folder') {
+					   const uri = vscode.Uri.file(projectDashboard.getReportsPath());
+					   await vscode.env.openExternal(uri);
+				   }
+				   
+				   reportsProvider.refresh();
+				   
+			   } catch (error) {
+				   vscode.window.showErrorMessage(`Failed to generate dashboard: ${error}`);
+			   }
+		   });
+	   });
+	   
 	   // Secondary status bar for search (updates based on privacy mode)
 	   const searchStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99);
 	   updateSearchStatusBar(searchStatusBarItem);
@@ -1200,7 +1266,8 @@ export function activate(context: vscode.ExtensionContext) {
 			   clearComplexityResultsCommand,
 			   generateComplexityHeatmapCommand,
 			   complexityAnalyzer,
-			   complexityHeatmapGenerator
+			   complexityHeatmapGenerator,
+			   generateProjectDashboardCommand
 	   );
 	   console.log('✅ What-The-Code extension fully activated!');
 }
